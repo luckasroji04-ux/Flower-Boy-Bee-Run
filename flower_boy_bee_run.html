@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flower Boy: Bee Run - Tyler the Creator Game</title>
+    <!-- Tailwind CSS para estilização moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts para uma tipografia retrô charmosa -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f7e1a0;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        /* Otimizações Mobile de Toque */
+        canvas, button, .skin-btn, #btn-touch-jump, #btn-touch-duck {
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar para estética limpa */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fef08a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ca8a04;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-hidden select-none">
+
+<div class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 w-full max-w-5xl mx-auto relative">
+    
+    <!-- Cabeçalho com Título e Opções de Áudio -->
+    <header class="w-full flex justify-between items-center mb-2 px-2">
+        <div class="flex flex-col">
+            <h1 class="text-3xl md:text-4xl font-black text-amber-950 tracking-tight flex items-center gap-2">
+                FLOWER BOY <span class="text-amber-600">BEE RUN</span> 🐝
+            </h1>
+            <p class="text-xs md:text-sm font-bold text-amber-800">Ajude o Tyler a fugir do enxame de abelhas!</p>
+        </div>
+        <div class="flex gap-2">
+            <button id="btn-sound" class="p-2 md:p-3 bg-amber-200 hover:bg-amber-300 border-2 border-amber-950 rounded-xl transition duration-150 flex items-center justify-center shadow-md active:scale-95" title="Ativar/Mudar Som">
+                <span id="sound-icon" class="text-xl">🔊</span>
+            </button>
+            <button id="btn-help" class="p-2 md:p-3 bg-amber-200 hover:bg-amber-300 border-2 border-amber-950 rounded-xl transition duration-150 flex items-center justify-center shadow-md active:scale-95" title="Instruções">
+                <span class="text-xl font-black">?</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Área Principal de Jogo / Canvas Container -->
+    <div class="relative w-full aspect-[16/9] md:aspect-[21/9] bg-sky-200 rounded-2xl border-4 md:border-8 border-amber-950 shadow-[8px_8px_0px_0px_rgba(69,26,3,1)] overflow-hidden">
+        
+        <!-- Tela de Canvas onde o jogo roda -->
+        <canvas id="gameCanvas" class="w-full h-full block bg-[#93c5fd]"></canvas>
+
+        <!-- Overlay de Dica de Controles de Toque em Telas Mobile (some em segundos) -->
+        <div id="mobile-controls-tip" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber-950/90 border border-amber-400 text-white text-[9px] md:hidden px-3 py-1.5 rounded-full pointer-events-none transition-opacity duration-1000 z-10 flex items-center gap-1">
+            <span>👈 ABAIXAR</span>
+            <span class="text-amber-400 font-bold">•</span>
+            <span>PULAR 👉 (TOQUE NO CANVAS)</span>
+        </div>
+
+        <!-- Overlay: Menu de Início -->
+        <div id="start-screen" class="absolute inset-0 bg-amber-500/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center transition-all duration-300">
+            <div class="bg-amber-100 border-4 border-amber-950 p-6 md:p-8 rounded-2xl shadow-xl max-w-md w-full animate-bounce-subtle">
+                <h2 class="pixel-font text-amber-950 text-xl md:text-2xl mb-4 tracking-wider leading-relaxed text-shadow">GAME START</h2>
+                <p class="text-amber-900 font-bold mb-6 text-sm md:text-base">
+                    As abelhas de "Flower Boy" estão furiosas! Desvie de hidrantes, cercas, buracos e carrinhos de golfe para salvar Tyler!
+                </p>
+                
+                <!-- Escolha de Skin -->
+                <div class="mb-6">
+                    <h3 class="font-black text-amber-950 mb-2 uppercase text-xs tracking-wider">Escolha seu Tyler:</h3>
+                    <div class="grid grid-cols-3 gap-2" id="skin-selector">
+                        <!-- Skin 1 (Padrão) -->
+                        <button id="skin-0" onclick="selectSkin(0)" class="skin-btn p-2 border-4 border-amber-950 rounded-xl bg-amber-300 flex flex-col items-center gap-1 transition-all">
+                            <div class="w-10 h-10 flex items-center justify-center">🌻</div>
+                            <span class="text-[10px] font-bold">Flower Boy</span>
+                        </button>
+                        <!-- Skin 2 (Igor) -->
+                        <button id="skin-1" onclick="selectSkin(1)" class="skin-btn p-2 border-4 border-transparent hover:border-amber-950 rounded-xl bg-pink-300 flex flex-col items-center gap-1 transition-all">
+                            <div class="w-10 h-10 flex items-center justify-center">💇‍♂️</div>
+                            <span class="text-[10px] font-bold">IGOR</span>
+                        </button>
+                        <!-- Skin 3 (Baudelaire) -->
+                        <button id="skin-2" onclick="selectSkin(2)" class="skin-btn p-2 border-4 border-transparent hover:border-amber-950 rounded-xl bg-teal-300 flex flex-col items-center gap-1 transition-all">
+                            <div class="w-10 h-10 flex items-center justify-center">🧳</div>
+                            <span class="text-[10px] font-bold">CMIYGL</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="btn-play" class="pixel-font w-full py-4 bg-green-500 hover:bg-green-600 text-white border-4 border-amber-950 rounded-xl text-lg transition duration-150 transform active:scale-95 shadow-[4px_4px_0px_0px_rgba(69,26,3,1)]">
+                    JOGAR (ESPAÇO)
+                </button>
+            </div>
+        </div>
+
+        <!-- Overlay: Jogo Pausado / Game Over -->
+        <div id="gameover-screen" class="absolute inset-0 bg-red-950/85 backdrop-blur-sm hidden flex-col items-center justify-center p-4 text-center transition-all duration-300">
+            <div class="bg-amber-100 border-4 border-amber-950 p-6 md:p-8 rounded-2xl shadow-xl max-w-md w-full">
+                <h2 class="pixel-font text-red-600 text-2xl md:text-3xl mb-1 tracking-wider">FIM DE JOGO</h2>
+                <p class="text-amber-950 font-black text-xs md:text-sm mb-4 uppercase">Você foi pego pelas abelhas!</p>
+                
+                <!-- Estatísticas da partida -->
+                <div class="grid grid-cols-2 gap-3 mb-6 bg-amber-200/50 p-4 border-2 border-amber-900/30 rounded-xl">
+                    <div class="text-center">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Distância</p>
+                        <p class="text-xl md:text-2xl font-black text-amber-950"><span id="go-score">0</span>m</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Melhor Recorde</p>
+                        <p class="text-xl md:text-2xl font-black text-amber-600"><span id="go-highscore">0</span>m</p>
+                    </div>
+                    <div class="text-center col-span-2 border-t border-amber-900/10 pt-2">
+                        <p class="text-xs font-bold text-amber-800 uppercase">Girassóis Coletados</p>
+                        <p class="text-lg md:text-xl font-black text-yellow-600">🌻 <span id="go-sunflowers">0</span></p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <button id="btn-restart" class="pixel-font w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-amber-950 border-4 border-amber-950 rounded-xl text-md transition duration-150 transform active:scale-95 shadow-[4px_4px_0px_0px_rgba(69,26,3,1)]">
+                        REJOGAR
+                    </button>
+                    <button id="btn-menu" class="font-bold w-full py-2 text-amber-900 hover:text-amber-950 transition">
+                        Voltar ao Menu Principal
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD Flutuante no Jogo -->
+        <div id="game-hud" class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none hidden">
+            <!-- Distância e Multiplicador -->
+            <div class="bg-amber-950/80 text-white border-2 border-amber-400 p-2 rounded-xl flex items-center gap-4 shadow-lg backdrop-blur-xs">
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider block font-bold text-amber-300">Distância</span>
+                    <span class="pixel-font text-xs md:text-sm" id="hud-score">00000m</span>
+                </div>
+                <div class="border-l border-amber-700 pl-4">
+                    <span class="text-[10px] uppercase tracking-wider block font-bold text-amber-300">Girassóis</span>
+                    <span class="pixel-font text-xs md:text-sm text-yellow-300" id="hud-sunflowers">🌻 0</span>
+                </div>
+            </div>
+            <!-- Indicador de Perigo de Abelha -->
+            <div id="bee-warning" class="bg-red-600/90 text-white border-2 border-white px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-lg animate-pulse text-xs md:text-sm font-black uppercase">
+                <span>⚠️ ENXAME PRÓXIMO!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles Mobile na Tela -->
+    <div class="w-full grid grid-cols-2 gap-4 mt-4 max-w-md md:hidden">
+        <button id="btn-touch-jump" class="h-16 bg-blue-500 active:bg-blue-600 border-4 border-amber-950 rounded-2xl flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-[0_4px_0_0_#0284c7]">
+            <span class="text-2xl">⬆️</span>
+            <span class="text-xs font-black uppercase">Pular</span>
+        </button>
+        <button id="btn-touch-duck" class="h-16 bg-amber-500 active:bg-amber-600 border-4 border-amber-950 rounded-2xl flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-[0_4px_0_0_#d97706]">
+            <span class="text-2xl">⬇️</span>
+            <span class="text-xs font-black uppercase">Agachar</span>
+        </button>
+    </div>
+
+    <!-- Rodapé de Instruções para Desktop -->
+    <div class="hidden md:flex justify-between w-full text-xs text-amber-900 mt-4 px-2 font-bold uppercase tracking-wider">
+        <span>Controles: <strong class="bg-amber-200 border border-amber-950/20 px-1.5 py-0.5 rounded">Seta Cima / W / Espaço</strong> para Pular • <strong class="bg-amber-200 border border-amber-950/20 px-1.5 py-0.5 rounded">Seta Baixo / S</strong> para Agachar</span>
+        <span>Evite os obstáculos e colete os girassóis para desbloquear mais!</span>
+    </div>
+</div>
+
+<!-- Modal de Instruções/Ajuda -->
+<div id="help-modal" class="fixed inset-0 bg-black/50 backdrop-blur-xs hidden z-50 items-center justify-center p-4">
+    <div class="bg-amber-100 border-4 border-amber-950 p-6 rounded-2xl max-w-md w-full shadow-2xl relative">
+        <button id="btn-close-help" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-red-500 hover:bg-red-600 border-2 border-amber-950 rounded-full font-bold text-white transition">&times;</button>
+        <h3 class="pixel-font text-amber-950 text-md mb-4 flex items-center gap-2">🐝 COMO JOGAR:</h3>
+        <ul class="text-sm text-amber-900 font-bold space-y-3 list-disc pl-5">
+            <li><strong>Seta para Cima ou Espaço:</strong> Pula por cima de obstáculos terrestres (hidrantes, cercas, buracos, carrinhos de golfe).</li>
+            <li><strong>Seta para Baixo:</strong> Agacha para passar por baixo de abelhas baixas ou troncos flutuantes.</li>
+            <li><strong>Aceleração Contínua:</strong> O jogo fica cada vez mais rápido e difícil conforme sua pontuação avança.</li>
+            <li><strong>Mantenha distância:</strong> Tropeçar em obstáculos te atrasa e traz as abelhas furiosas para mais perto! Se tropeçar duas vezes seguidas, você é pego!</li>
+            <li><strong>Colete Girassóis:</strong> Use as flores que coletar para provar que você é o verdadeiro "Flower Boy"!</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Sistema de Som Dinâmico Retrô (Sem dependências externas para garantir que sempre toque)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let soundEnabled = true;
+let bgMusicInterval = null;
+let currentBpm = 115;
+let beatCount = 0;
+
+// Ativar áudio em dispositivos móveis no primeiro toque de forma segura
+function unlockAudioContext() {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+window.addEventListener('touchstart', unlockAudioContext, { once: true });
+window.addEventListener('click', unlockAudioContext, { once: true });
+
+// Notas musicais para a trilha sonora retrô inspirada em "See You Again" e "Earfquake" (Estilo Chiptune)
+const seeYouAgainProgression = [
+    // Acordes simples/Arpejos: G, Bm, Em, C
+    ['G4', 'B4', 'D5'], ['F#4', 'B4', 'D5'], ['E4', 'G4', 'B4'], ['C4', 'E4', 'G4']
+];
+
+const noteFreqs = {
+    'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23,
+    'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+    'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46,
+    'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'B5': 987.77
+};
+
+function playSoundEffect(type) {
+    if (!soundEnabled) return;
+    try {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'jump') {
+            // Sweep de frequência característico de jogos retro de plataforma
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        } else if (type === 'duck') {
+            // Descida de tom fofa
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.12);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        } else if (type === 'coin') {
+            // Som de moeda de girassol (duas notas rápidas subindo)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.06); // E5
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        } else if (type === 'hit') {
+            // Ruído rústico / explosão curta de colisão
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, now);
+            osc.frequency.linearRampToValueAtTime(40, now + 0.2);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+            osc.start(now);
+            osc.stop(now + 0.22);
+            
+            // Vibração física em celulares compatíveis
+            if (navigator.vibrate) {
+                navigator.vibrate([80, 50, 80]);
+            }
+        } else if (type === 'gameover') {
+            // Som melancólico descendente
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.6);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+        }
+    } catch (e) {
+        console.warn('Falha ao produzir som: ', e);
+    }
+}
+
+// Inicia batidas chiptune contínuas de fundo
+function startChiptuneMusic() {
+    stopChiptuneMusic();
+    const beatIntervalMs = (60 / currentBpm) * 1000 * 0.5; // Batidas em colcheia
+
+    bgMusicInterval = setInterval(() => {
+        if (!soundEnabled) return;
+        try {
+            const now = audioCtx.currentTime;
+            
+            // Loop de bateria eletrônica retrô bem simples (Kicks & Snares e arpejos)
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            beatCount = (beatCount + 1) % 16;
+            
+            // Determina qual acorde da progressão usar (muda a cada 4 batidas)
+            const progressionIdx = Math.floor(beatCount / 4) % seeYouAgainProgression.length;
+            const chord = seeYouAgainProgression[progressionIdx];
+            
+            // Arpejador
+            const noteName = chord[beatCount % chord.length];
+            const freq = noteFreqs[noteName];
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.03, now); // Volume de fundo bem baixinho para não incomodar
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            
+            osc.start(now);
+            osc.stop(now + 0.22);
+            
+            // Simple Bass Drum em batidas pares
+            if (beatCount % 4 === 0) {
+                const bassOsc = audioCtx.createOscillator();
+                const bassGain = audioCtx.createGain();
+                bassOsc.connect(bassGain);
+                bassGain.connect(audioCtx.destination);
+                bassOsc.frequency.setValueAtTime(100, now);
+                bassOsc.frequency.exponentialRampToValueAtTime(45, now + 0.15);
+                bassGain.gain.setValueAtTime(0.06, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                bassOsc.start(now);
+                bassOsc.stop(now + 0.16);
+            }
+        } catch (e) {
+            console.warn(e);
+        }
+    }, beatIntervalMs);
+}
+
+function stopChiptuneMusic() {
+    if (bgMusicInterval) {
+        clearInterval(bgMusicInterval);
+        bgMusicInterval = null;
+    }
+}
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// CONSTANTES DE RESOLUÇÃO VIRTUAL (Garante física e velocidades idênticas em qualquer tamanho de tela)
+const VIRTUAL_WIDTH = 960;
+const VIRTUAL_HEIGHT = 400;
+
+function resizeCanvas() {
+    // Mantém a resolução lógica fixa para manter consistência da jogabilidade
+    canvas.width = VIRTUAL_WIDTH;
+    canvas.height = VIRTUAL_HEIGHT;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let gameActive = false;
+let isGameOver = false;
+let score = 0;
+let highScore = parseInt(localStorage.getItem('flowerboy_highscore') || '0');
+let sunflowerCount = 0;
+
+// Configurações de Skin
+let selectedSkinIndex = 0;
+const skins = [
+    {
+        name: "Flower Boy",
+        hairColor: "#1c1917", // Chapéu marrom escuro
+        shirtColor: "#facc15", // Camisa amarela
+        pantsColor: "#2563eb", // Shorts azul
+        skinColor: "#92400e" // Pele negra tom médio-escuro
+    },
+    {
+        name: "IGOR",
+        hairColor: "#fef08a", // Peruca loura
+        shirtColor: "#f472b6", // Terno rosa
+        pantsColor: "#ec4899", // Calça rosa
+        skinColor: "#78350f"
+    },
+    {
+        name: "Tyler Baudelaire",
+        hairColor: "#2dd4bf", // Chapéu Usanka azul-turquesa
+        shirtColor: "#0d9488", // Casaco azul-petróleo
+        pantsColor: "#eab308", // Calça amarela
+        skinColor: "#78350f"
+    }
+];
+
+function selectSkin(index) {
+    selectedSkinIndex = index;
+    // Atualiza o estado visual do menu de seleção
+    for (let i = 0; i < 3; i++) {
+        const btn = document.getElementById(`skin-${i}`);
+        if (i === index) {
+            btn.className = btn.className.replace('border-transparent', 'border-amber-950');
+            btn.classList.add('scale-105');
+        } else {
+            btn.className = btn.className.replace('border-amber-950', 'border-transparent');
+            btn.classList.remove('scale-105');
+        }
+    }
+    playSoundEffect('coin');
+}
+
+
+// Jogador (Tyler)
+class Player {
+    constructor() {
+        this.reset();
+    }
+
+    reset() {
+        this.width = 48;
+        this.height = 76;
+        this.x = 120;
+        this.groundY = 0; // Calculado no loop para ficar dinâmico
+        this.y = 0;
+        this.vy = 0;
+        this.gravity = 0.55; // Suavizado para o mobile
+        this.jumpForce = -11.5;
+        this.isJumping = false;
+        this.isDucking = false;
+        this.frame = 0;
+        this.animSpeed = 0.15;
+        this.animTimer = 0;
+        this.state = 'running'; // running, jumping, ducking, stumbling
+        this.stumbleTimer = 0;
+    }
+
+    jump() {
+        if (!this.isJumping && !this.isDucking) {
+            this.vy = this.jumpForce;
+            this.isJumping = true;
+            this.state = 'jumping';
+            playSoundEffect('jump');
+            // Partículas ao decolar
+            createParticles(this.x + this.width/2, this.y + this.height, '#eab308', 8);
+        }
+    }
+
+    duck(isPressed) {
+        if (isPressed) {
+            if (!this.isJumping) {
+                if (!this.isDucking) {
+                    playSoundEffect('duck');
+                }
+                this.isDucking = true;
+                this.state = 'ducking';
+                this.height = 42; // Encurta a caixa de colisão
+            }
+        } else {
+            if (this.isDucking) {
+                this.isDucking = false;
+                this.state = 'running';
+                this.height = 76;
+            }
+        }
+    }
+
+    stumble() {
+        // Quando bate mas não morre imediatamente
+        this.stumbleTimer = 40;
+        this.state = 'stumbling';
+        playSoundEffect('hit');
+    }
+
+    update(groundY) {
+        this.groundY = groundY - this.height;
+
+        // Se estiver no chão e não pulando
+        if (!this.isJumping) {
+            this.y = this.groundY;
+        }
+
+        // Aplicando Física de gravidade
+        if (this.isJumping) {
+            this.vy += this.gravity;
+            this.y += this.vy;
+
+            // Checa pouso
+            if (this.y >= this.groundY) {
+                this.y = this.groundY;
+                this.vy = 0;
+                this.isJumping = false;
+                this.state = this.isDucking ? 'ducking' : 'running';
+                // Partículas de poeira ao aterrissar
+                createParticles(this.x + this.width/2, groundY, '#fef08a', 5);
+            }
+        }
+
+        // Lógica de animação de passos
+        this.animTimer += this.animSpeed;
+        if (this.animTimer >= 1) {
+            this.frame = (this.frame + 1) % 4;
+            this.animTimer = 0;
+        }
+
+        // Temporizador de tropeço
+        if (this.stumbleTimer > 0) {
+            this.stumbleTimer--;
+            if (this.stumbleTimer === 0 && !this.isJumping) {
+                this.state = this.isDucking ? 'ducking' : 'running';
+            }
+        }
+    }
+
+    draw() {
+        ctx.save();
+        
+        const skin = skins[selectedSkinIndex];
+        
+        // Efeito piscante se estiver tropeçado / invulnerável temporário
+        if (this.stumbleTimer > 0 && Math.floor(this.stumbleTimer / 4) % 2 === 0) {
+            ctx.globalAlpha = 0.4;
+        }
+
+        // Desenhar Tyler de forma pixelizada estilizada (Pixel Art Procedural)
+        const px = this.x;
+        const py = this.y;
+        const w = this.width;
+        const h = this.height;
+
+        if (this.state === 'ducking') {
+            // Desenhar agachado
+            // Chapéu/Cabelo
+            ctx.fillStyle = skin.hairColor;
+            ctx.fillRect(px + 4, py + 4, w - 8, 12);
+            // Cabeça/Rosto
+            ctx.fillStyle = skin.skinColor;
+            ctx.fillRect(px + 8, py + 16, w - 16, 12);
+            // Olculos escuros (estilo Tyler)
+            ctx.fillStyle = '#1c1917';
+            ctx.fillRect(px + 16, py + 20, 14, 4);
+            // Terno/Camiseta
+            ctx.fillStyle = skin.shirtColor;
+            ctx.fillRect(px + 6, py + 28, w - 12, 14);
+        } else {
+            // Desenhar em pé (Correndo ou Pulando)
+            // 1. Cabeça & Chapéu
+            ctx.fillStyle = skin.hairColor;
+            ctx.fillRect(px + 10, py, 26, 14); // Boné / Chapéu
+            ctx.fillStyle = skin.skinColor;
+            ctx.fillRect(px + 12, py + 14, 22, 16); // Rosto
+            
+            // Óculos
+            ctx.fillStyle = '#1c1917';
+            ctx.fillRect(px + 20, py + 18, 14, 5);
+
+            // 2. Tronco / Camisa
+            ctx.fillStyle = skin.shirtColor;
+            ctx.fillRect(px + 8, py + 30, 32, 24);
+
+            // Braço balançando
+            ctx.fillStyle = skin.skinColor;
+            const swing = Math.sin(this.frame * Math.PI / 2) * 6;
+            ctx.fillRect(px + 24 + swing, py + 36, 8, 12);
+
+            // 3. Pernas / Calça
+            ctx.fillStyle = skin.pantsColor;
+            ctx.fillRect(px + 10, py + 54, 28, 10);
+
+            // Botas/Sapato animado correndo
+            ctx.fillStyle = '#1c1917'; // Calçado escuro / mocassins
+            if (this.state === 'jumping') {
+                ctx.fillRect(px + 10, py + 64, 10, 8);
+                ctx.fillRect(px + 26, py + 62, 10, 8);
+            } else {
+                // Alternância dos passos de corrida
+                if (this.frame % 2 === 0) {
+                    ctx.fillRect(px + 8, py + 64, 10, 10);
+                    ctx.fillRect(px + 28, py + 62, 10, 8);
+                } else {
+                    ctx.fillRect(px + 10, py + 62, 10, 8);
+                    ctx.fillRect(px + 26, py + 64, 10, 10);
+                }
+            }
+        }
+
+        ctx.restore();
+    }
+}
+
+class Obstacle {
+    constructor(speedMultiplier) {
+        this.x = VIRTUAL_WIDTH + 100;
+        this.speed = (5 + speedMultiplier * 1.5);
+        this.markedForRemoval = false;
+
+        // Tipo aleatório de obstáculo
+        // 0: Girassol Alto (Pular), 1: Hidrante Baixo (Pular), 2: Colmeia Flutuante (Agachar), 3: Carrinho de Golfe Rápido
+        const rand = Math.random();
+        if (rand < 0.35) {
+            this.type = 0; // Hidrante de Incêndio / Cerca
+            this.width = 32;
+            this.height = 42;
+            this.yOffset = 0; // No chão
+        } else if (rand < 0.65) {
+            this.type = 1; // Cerca de Girassóis alta
+            this.width = 38;
+            this.height = 64;
+            this.yOffset = 0; // No chão
+        } else if (rand < 0.85) {
+            this.type = 2; // Colmeia Flutuante de abelhas
+            this.width = 40;
+            this.height = 36;
+            this.yOffset = 55; // Flutuando - precisa agachar
+        } else {
+            this.type = 3; // Carrinho de Golfe Rápido (Exige precisão extrema!)
+            this.width = 65;
+            this.height = 48;
+            this.yOffset = 0;
+            this.speed += 2.5; // Carrinho de golfe corre mais rápido!
+        }
+    }
+
+    update(groundY) {
+        this.x -= this.speed;
+        
+        // Define o Y baseado no Ground e no YOffset
+        if (this.type === 2) {
+            this.y = groundY - this.yOffset - this.height;
+        } else {
+            this.y = groundY - this.height;
+        }
+
+        if (this.x + this.width < 0) {
+            this.markedForRemoval = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        
+        // Renderizar pixel-art customizada para cada tipo
+        if (this.type === 0) {
+            // Hidrante Vermelho Retro / Cerca
+            ctx.fillStyle = '#dc2626'; // Vermelho
+            ctx.fillRect(this.x + 6, this.y, this.width - 12, this.height);
+            ctx.fillStyle = '#ef4444'; // Detalhe claro
+            ctx.fillRect(this.x + 10, this.y + 4, 6, this.height - 8);
+            ctx.fillStyle = '#eab308'; // Tampa amarela
+            ctx.fillRect(this.x + 2, this.y + 12, this.width - 4, 8);
+        } else if (this.type === 1) {
+            // Girassol Gigante / Cerca com caule verde e flor grande
+            // Caule
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(this.x + this.width/2 - 3, this.y + 20, 6, this.height - 20);
+            // Pétalas amarelas
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + 20, 18, 0, Math.PI * 2);
+            ctx.fill();
+            // Miolo marrom
+            ctx.fillStyle = '#78350f';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width/2, this.y + 20, 10, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.type === 2) {
+            // Colmeia com efeito de enxame de pixels rodeando
+            ctx.fillStyle = '#ca8a04'; // Amarelo escuro da colmeia
+            ctx.fillRect(this.x + 8, this.y, this.width - 16, this.height);
+            ctx.fillStyle = '#eab308'; // Destaques dourados
+            ctx.fillRect(this.x + 12, this.y + 6, this.width - 24, this.height - 12);
+            // Entrada preta
+            ctx.fillStyle = '#1c1917';
+            ctx.fillRect(this.x + this.width/2 - 4, this.y + this.height - 14, 8, 8);
+            
+            // Abelhas minúsculas pixeladas zumbindo em volta
+            const pulse = Math.sin(Date.now() / 80) * 5;
+            ctx.fillStyle = '#1c1917';
+            ctx.fillRect(this.x - 2 + pulse, this.y + 10, 3, 3);
+            ctx.fillRect(this.x + this.width + pulse, this.y + 15, 3, 3);
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(this.x - 5 - pulse, this.y + 22, 3, 3);
+        } else if (this.type === 3) {
+            // Carrinho de Golfe GOLF WANG
+            ctx.fillStyle = '#bae6fd'; // Corpo azul-bebê / pastel
+            ctx.fillRect(this.x, this.y + 16, this.width, this.height - 24);
+            // Cabine / Teto preto com hastes finas
+            ctx.fillStyle = '#1c1917';
+            ctx.fillRect(this.x + 10, this.y, 4, 16);
+            ctx.fillRect(this.x + this.width - 14, this.y, 4, 16);
+            ctx.fillRect(this.x + 6, this.y, this.width - 12, 4); // Teto
+            // Rodas pixelizadas pretas
+            ctx.fillStyle = '#374151';
+            ctx.beginPath();
+            ctx.arc(this.x + 14, this.y + this.height - 8, 8, 0, Math.PI * 2);
+            ctx.arc(this.x + this.width - 14, this.y + this.height - 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            // Calotas brancas
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(this.x + 14, this.y + this.height - 8, 3, 0, Math.PI * 2);
+            ctx.arc(this.x + this.width - 14, this.y + this.height - 8, 3, 0, Math.PI * 2);
+            ctx.fill();
+            // Letreiro "GOLF" estilizado na lateral do carrinho
+            ctx.fillStyle = '#f472b6'; // Rosa
+            ctx.fillRect(this.x + 18, this.y + 22, 18, 6);
+        }
+
+        ctx.restore();
+    }
+}
+
+class Collectible {
+    constructor(groundY) {
+        this.width = 24;
+        this.height = 24;
+        this.x = VIRTUAL_WIDTH + 100;
+        // Altura aleatória: no chão ou flutuando baixo
+        const alt = Math.random();
+        if (alt < 0.5) {
+            this.y = groundY - 32;
+        } else {
+            this.y = groundY - 80;
+        }
+        this.speed = 5;
+        this.markedForRemoval = false;
+        this.bounce = 0;
+    }
+
+    update() {
+        this.x -= this.speed;
+        this.bounce += 0.08;
+        if (this.x + this.width < 0) {
+            this.markedForRemoval = true;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        
+        // Efeito flutuante suave senoidal
+        const yOffset = Math.sin(this.bounce) * 4;
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2 + yOffset;
+
+        // Desenhar Girassol colecionável brilhante
+        ctx.fillStyle = '#facc15'; // Pétalas douradas intensas
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+            const px = cx + Math.cos(a) * 8;
+            const py = cy + Math.sin(a) * 8;
+            ctx.fillRect(px - 3, py - 3, 6, 6);
+        }
+        // Centro escuro
+        ctx.fillStyle = '#451a03';
+        ctx.fillRect(cx - 4, cy - 4, 8, 8);
+
+        ctx.restore();
+    }
+}
+
+let particles = [];
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.vx = (Math.random() - 0.5) * 6;
+        this.vy = (Math.random() - 0.5) * 6 - 2;
+        this.size = Math.random() * 5 + 3;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.015;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // Pequena gravidade
+        this.alpha -= this.decay;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.restore();
+    }
+}
+
+function createParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+    }
+}
+
+let player;
+let obstacles = [];
+let collectibles = [];
+let groundHeight = 60; // Distância do fundo do canvas
+let gameSpeed = 1;
+let beeDistance = 300; // Distância relativa entre o enxame e o Tyler (se chegar a 0, Game Over)
+let maxBeeDistance = 300;
+let levelTimer = 0;
+let cloudOffset = 0;
+let flowerOffset = 0;
+let screenShake = 0;
+
+// Inicializa ou Reseta uma partida completa
+function initGame() {
+    player = new Player();
+    obstacles = [];
+    collectibles = [];
+    particles = [];
+    score = 0;
+    sunflowerCount = 0;
+    gameSpeed = 1.0;
+    beeDistance = 240; // Dá uma folga inicial confortável
+    maxBeeDistance = 300;
+    levelTimer = 0;
+    screenShake = 0;
+    
+    document.getElementById('hud-score').innerText = "00000m";
+    document.getElementById('hud-sunflowers').innerText = "🌻 0";
+    document.getElementById('game-hud').classList.remove('hidden');
+
+    // Desaparece com a dica de toque após iniciar
+    const tip = document.getElementById('mobile-controls-tip');
+    tip.style.opacity = '1';
+    setTimeout(() => {
+        tip.style.opacity = '0';
+    }, 4000);
+    
+    if (soundEnabled) {
+        startChiptuneMusic();
+    }
+}
+
+function updateGame() {
+    if (!gameActive || isGameOver) return;
+
+    levelTimer++;
+    // Aumenta a velocidade e dificuldade gradualmente
+    gameSpeed = 1.0 + (score / 350); 
+    
+    // Incrementa Score baseado no movimento
+    score += 0.15;
+    document.getElementById('hud-score').innerText = `${Math.floor(score).toString().padStart(5, '0')}m`;
+
+    const currentGroundY = VIRTUAL_HEIGHT - groundHeight;
+
+    // Atualiza o Jogador
+    player.update(currentGroundY);
+
+    // Gerador de Obstáculos inteligente baseado em distanciamento dinâmico
+    if (levelTimer % Math.max(70, Math.floor(160 - gameSpeed * 8)) === 0) {
+        obstacles.push(new Obstacle(gameSpeed));
+    }
+
+    // Gerador de Girassóis Colecionáveis
+    if (levelTimer % 110 === 0) {
+        collectibles.push(new Collectible(currentGroundY));
+    }
+
+    // Atualiza & Filtra Obstáculos
+    obstacles.forEach(obs => {
+        obs.update(currentGroundY);
+        
+        // Verificação de Colisão Avançada com Caixas AABB
+        if (checkCollision(player, obs)) {
+            obs.markedForRemoval = true;
+            // Se bater, Tyler tropeça e o enxame avança bruscamente
+            player.stumble();
+            beeDistance -= 80;
+            screenShake = 15; // Tremor de tela dramático
+            createParticles(player.x + player.width/2, player.y + player.height/2, '#ca8a04', 15);
+            
+            if (beeDistance <= 0) {
+                triggerGameOver();
+            }
+        }
+    });
+    obstacles = obstacles.filter(obs => !obs.markedForRemoval);
+
+    // Atualiza & Filtra Colecionáveis
+    collectibles.forEach(col => {
+        col.update();
+        
+        // Coleta de Girassóis
+        if (checkCollision(player, col)) {
+            col.markedForRemoval = true;
+            sunflowerCount++;
+            document.getElementById('hud-sunflowers').innerText = `🌻 ${sunflowerCount}`;
+            playSoundEffect('coin');
+            createParticles(col.x, col.y, '#facc15', 10);
+            
+            // Recupera um pouquinho de distância do enxame ao coletar flores!
+            beeDistance = Math.min(maxBeeDistance, beeDistance + 25);
+        }
+    });
+    collectibles = collectibles.filter(col => !col.markedForRemoval);
+
+    // Atualiza Partículas
+    particles.forEach(p => p.update());
+    particles = particles.filter(p => p.alpha > 0);
+
+    // Recuperação natural de distância das abelhas com o tempo
+    if (player.state !== 'stumbling' && beeDistance < maxBeeDistance) {
+        beeDistance += 0.08;
+    }
+
+    // Controle de Alerta de Proximidade das Abelhas no HUD
+    const warningHud = document.getElementById('bee-warning');
+    if (beeDistance < 100) {
+        warningHud.classList.remove('hidden');
+    } else {
+        warningHud.classList.add('hidden');
+    }
+
+    // Efeito Paralaxe de Fundo
+    cloudOffset -= 0.25 * gameSpeed;
+    flowerOffset -= 1.5 * gameSpeed;
+}
+
+// Detecção simples de Colisão AABB (Ajustada para o frame e agachamento do Tyler)
+function checkCollision(p, obj) {
+    // Reduz um pouco os limites reais para colisão mais "generosa" e justa com o jogador
+    const px = p.x + 4;
+    const py = p.y + 4;
+    const pw = p.width - 8;
+    const ph = p.height - 8;
+
+    return (
+        px < obj.x + obj.width &&
+        px + pw > obj.x &&
+        py < obj.y + obj.height &&
+        py + ph > obj.y
+    );
+}
+
+function drawGame() {
+    ctx.save();
+    
+    // Aplica Screen Shake (Trepidação de tela ao bater)
+    if (screenShake > 0) {
+        const dx = (Math.random() - 0.5) * screenShake;
+        const dy = (Math.random() - 0.5) * screenShake;
+        ctx.translate(dx, dy);
+        screenShake *= 0.9; // Atenuação suave
+        if (screenShake < 0.5) screenShake = 0;
+    }
+
+    // 1. Céu Azul do Clássico "Flower Boy"
+    const skyGradient = ctx.createLinearGradient(0, 0, 0, VIRTUAL_HEIGHT);
+    skyGradient.addColorStop(0, '#93c5fd'); // Azul Celeste
+    skyGradient.addColorStop(0.7, '#bfdbfe'); // Azul claro
+    skyGradient.addColorStop(1, '#fef08a'); // Amarelo Pôr-do-sol
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+
+    // 2. Nuvens Retrô em Paralaxe
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+    for (let i = 0; i < 5; i++) {
+        const cx = ((cloudOffset + i * 350) % (VIRTUAL_WIDTH + 200)) - 100;
+        const cy = 40 + (i % 2) * 25;
+        ctx.fillRect(cx, cy, 120, 20);
+        ctx.fillRect(cx + 20, cy - 10, 80, 20);
+    }
+
+    // 3. Montanhas ao Fundo
+    ctx.fillStyle = '#65a30d'; // Verde floresta distante
+    ctx.beginPath();
+    ctx.moveTo(0, VIRTUAL_HEIGHT - groundHeight);
+    ctx.lineTo(150, VIRTUAL_HEIGHT - groundHeight - 90);
+    ctx.lineTo(350, VIRTUAL_HEIGHT - groundHeight);
+    ctx.lineTo(500, VIRTUAL_HEIGHT - groundHeight - 110);
+    ctx.lineTo(750, VIRTUAL_HEIGHT - groundHeight);
+    ctx.lineTo(VIRTUAL_WIDTH, VIRTUAL_HEIGHT - groundHeight - 60);
+    ctx.lineTo(VIRTUAL_WIDTH, VIRTUAL_HEIGHT - groundHeight);
+    ctx.closePath();
+    ctx.fill();
+
+    // 4. Campo de Girassóis Próximo (Efeito de Paralaxe)
+    const currentGroundY = VIRTUAL_HEIGHT - groundHeight;
+    ctx.fillStyle = '#4ade80'; // Gramado claro
+    ctx.fillRect(0, currentGroundY, VIRTUAL_WIDTH, groundHeight);
+
+    // Desenha pequenos girassóis decorativos se movendo no gramado
+    ctx.fillStyle = '#facc15';
+    for (let i = 0; i < 20; i++) {
+        const fx = ((flowerOffset + i * 110) % (VIRTUAL_WIDTH + 50)) - 25;
+        const fy = currentGroundY + 15 + (i % 3) * 12;
+        // Miolo do girassol
+        ctx.fillRect(fx, fy, 8, 8);
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(fx + 2, fy + 2, 4, 4);
+        ctx.fillStyle = '#facc15';
+    }
+
+    // Linha limite do chão pixelizado
+    ctx.fillStyle = '#ca8a04';
+    ctx.fillRect(0, currentGroundY, VIRTUAL_WIDTH, 4);
+
+    // 5. Desenhar Obstáculos e Colecionáveis
+    collectibles.forEach(col => col.draw());
+    obstacles.forEach(obs => obs.draw());
+
+    // 6. Desenhar Jogador (Tyler)
+    player.draw();
+
+    // 7. Desenhar Partículas
+    particles.forEach(p => p.draw());
+
+    // 8. Desenhar o Enxame de Abelhas Perseguidoras atrás do Tyler
+    drawBeeSwarm();
+
+    ctx.restore();
+}
+
+// Desenha o enxame de abelhas ameaçador do lado esquerdo da tela
+function drawBeeSwarm() {
+    ctx.save();
+    
+    // Calcula o X inicial do enxame na tela
+    // beeDistance varia entre 0 e 300. Se 300: enxame fica fora da tela. Se menor, invade a tela.
+    const swarmX = Math.max(-100, player.x - beeDistance);
+    
+    // Desenha névoa de enxame amarela e preta piscante
+    const gradient = ctx.createLinearGradient(swarmX - 120, 0, swarmX + 60, 0);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
+    gradient.addColorStop(0.6, 'rgba(234, 179, 8, 0.7)');
+    gradient.addColorStop(1, 'rgba(234, 179, 8, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, swarmX + 60, VIRTUAL_HEIGHT - groundHeight);
+
+    // Desenha dezenas de pequenas abelhas pixelizadas zumbindo no limite do enxame
+    const time = Date.now() / 60;
+    ctx.fillStyle = '#1c1917'; // Corpo preto das abelhas
+    for (let i = 0; i < 25; i++) {
+        const ay = 40 + (i * 14) + Math.sin(time + i) * 15;
+        const ax = swarmX + Math.cos(time * 0.5 + i) * 20 - (i % 4) * 10;
+        
+        if (ax > 0) {
+            // Corpo da abelha
+            ctx.fillRect(ax, ay, 10, 6);
+            // Listra amarela
+            ctx.fillStyle = '#eab308';
+            ctx.fillRect(ax + 3, ay, 3, 6);
+            // Asinhas brancas translúcidas brilhando
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(ax + 2, ay - 4, 4, 4);
+            ctx.fillStyle = '#1c1917';
+        }
+    }
+
+    ctx.restore();
+}
+
+function triggerGameOver() {
+    isGameOver = true;
+    gameActive = false;
+    stopChiptuneMusic();
+    playSoundEffect('gameover');
+
+    // Atualiza Recorde
+    if (score > highScore) {
+        highScore = Math.floor(score);
+        localStorage.setItem('flowerboy_highscore', highScore);
+    }
+
+    // Exibe Tela de Fim de Jogo
+    document.getElementById('go-score').innerText = Math.floor(score);
+    document.getElementById('go-highscore').innerText = Math.floor(highScore);
+    document.getElementById('go-sunflowers').innerText = sunflowerCount;
+    
+    document.getElementById('game-hud').classList.add('hidden');
+    document.getElementById('gameover-screen').classList.remove('hidden');
+}
+
+function gameLoop() {
+    updateGame();
+    drawGame();
+    requestAnimationFrame(gameLoop);
+}
+// Inicializa o primeiro desenho para que o menu não fique preto
+initGame();
+drawGame();
+requestAnimationFrame(gameLoop);
+
+const keysPressed = {};
+
+window.addEventListener('keydown', e => {
+    if (!gameActive || isGameOver) {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+            e.preventDefault();
+            startGameplay();
+        }
+        return;
+    }
+
+    keysPressed[e.code] = true;
+
+    if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') {
+        e.preventDefault();
+        player.jump();
+    }
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        player.duck(true);
+    }
+});
+
+window.addEventListener('keyup', e => {
+    keysPressed[e.code] = false;
+
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        player.duck(false);
+    }
+});
+
+// ==========================================
+// CONTROLES DE TOQUE DIRETO NO CANVAS (MOBILE)
+// ==========================================
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    unlockAudioContext();
+
+    if (!gameActive || isGameOver) {
+        startGameplay();
+        return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[e.touches.length - 1];
+    const touchX = touch.clientX - rect.left;
+    const midPoint = rect.width / 2;
+
+    // Lado esquerdo agacha, lado direito pula
+    if (touchX > midPoint) {
+        gameplayJump();
+    } else {
+        gameplayDuckStart();
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (!gameActive || isGameOver) return;
+
+    // Verifica se ainda existe algum toque no lado esquerdo (mantendo agachamento)
+    const rect = canvas.getBoundingClientRect();
+    const midPoint = rect.width / 2;
+    let keepDucking = false;
+
+    for (let i = 0; i < e.touches.length; i++) {
+        const touchX = e.touches[i].clientX - rect.left;
+        if (touchX <= midPoint) {
+            keepDucking = true;
+        }
+    }
+
+    if (!keepDucking) {
+        gameplayDuckEnd();
+    }
+}, { passive: false });
+
+function gameplayJump() {
+    if (gameActive && !isGameOver) {
+        player.jump();
+    }
+}
+
+function gameplayDuckStart() {
+    if (gameActive && !isGameOver) {
+        player.duck(true);
+    }
+}
+
+function gameplayDuckEnd() {
+    if (gameActive && !isGameOver) {
+        player.duck(false);
+    }
+}
+
+// Listeners dos Botões Adicionais na Tela (Para Celulares)
+const btnTouchJump = document.getElementById('btn-touch-jump');
+const btnTouchDuck = document.getElementById('btn-touch-duck');
+
+btnTouchJump.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    unlockAudioContext();
+    gameplayJump();
+});
+btnTouchJump.addEventListener('mousedown', (e) => {
+    gameplayJump();
+});
+
+btnTouchDuck.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    unlockAudioContext();
+    gameplayDuckStart();
+});
+btnTouchDuck.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    gameplayDuckEnd();
+});
+btnTouchDuck.addEventListener('mousedown', () => {
+    gameplayDuckStart();
+});
+btnTouchDuck.addEventListener('mouseup', () => {
+    gameplayDuckEnd();
+});
+
+// Lógica de iniciar e reiniciar partida
+function gameplayAction() {
+    if (!gameActive && !isGameOver) {
+        startGameplay();
+    }
+}
+
+function startGameplay() {
+    unlockAudioContext();
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('gameover-screen').classList.add('hidden');
+    initGame();
+    gameActive = true;
+    isGameOver = false;
+}
+
+document.getElementById('btn-play').addEventListener('click', () => {
+    startGameplay();
+});
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+    startGameplay();
+});
+
+document.getElementById('btn-menu').addEventListener('click', () => {
+    document.getElementById('gameover-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+    initGame();
+    drawGame();
+});
+
+const soundBtn = document.getElementById('btn-sound');
+const soundIcon = document.getElementById('sound-icon');
+
+soundBtn.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) {
+        soundIcon.innerText = "🔊";
+        if (gameActive && !isGameOver) {
+            startChiptuneMusic();
+        }
+    } else {
+        soundIcon.innerText = "🔇";
+        stopChiptuneMusic();
+    }
+});
+
+// Modal de ajuda
+const helpBtn = document.getElementById('btn-help');
+const closeHelpBtn = document.getElementById('btn-close-help');
+const helpModal = document.getElementById('help-modal');
+
+helpBtn.addEventListener('click', () => {
+    helpModal.classList.remove('hidden');
+    helpModal.classList.add('flex');
+});
+
+closeHelpBtn.addEventListener('click', () => {
+    helpModal.classList.add('hidden');
+    helpModal.classList.remove('flex');
+});
+
+// Seleção de skin padrão inicial
+selectSkin(0);
+</script>
+</body>
+</html>
